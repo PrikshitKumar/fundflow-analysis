@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/Prikshit/fundflow-analysis/helpers"
 	"github.com/Prikshit/fundflow-analysis/models"
 	"github.com/Prikshit/fundflow-analysis/services"
 
@@ -17,14 +18,15 @@ func GetPayers(c *gin.Context) {
 		return
 	}
 
-	// Fetch transactions
-	normalTx, err := services.FetchEtherscanData("account", "txlist", address)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transactions"})
-		return
-	}
+	normalTxs, _ := services.FetchEtherscanData("account", "txlist", address)
+	internalTxs, _ := services.FetchEtherscanData("account", "txlistinternal", address)
+	tokenTxs, _ := services.FetchEtherscanData("account", "tokentx", address)
 
-	payers := analyzePayers(normalTx)
+	// Combine all transaction types
+	allTxs := append(append(normalTxs, internalTxs...), tokenTxs...)
+
+	payers := analyzePayers(allTxs)
+
 	c.JSON(http.StatusOK, gin.H{"message": "success", "data": payers})
 }
 
@@ -34,7 +36,7 @@ func analyzePayers(transactions []models.Transaction) []gin.H {
 
 	for _, tx := range transactions {
 		if tx.From != "" {
-			payerMap[tx.From] += parseValue(tx.Value)
+			payerMap[tx.From] += helpers.ParseValue(tx.Value)
 		}
 	}
 
