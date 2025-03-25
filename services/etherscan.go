@@ -26,7 +26,6 @@ func FetchEtherscanData(module, action, address string) ([]models.Transaction, e
 
 	resp, err := client.Get(url)
 	if err != nil {
-		log.Println("❌ HTTP Request Failed:", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -34,12 +33,8 @@ func FetchEtherscanData(module, action, address string) ([]models.Transaction, e
 	// Read the response body
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("❌ Error Reading Response Body:", err)
 		return nil, err
 	}
-
-	// Log raw response for debugging
-	log.Println("🔹 Raw API Response:", string(body))
 
 	var result struct {
 		Status  string               `json:"status"`
@@ -50,13 +45,11 @@ func FetchEtherscanData(module, action, address string) ([]models.Transaction, e
 	// Parse JSON response
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		log.Println("❌ JSON Parsing Error:", err)
 		return nil, err
 	}
 
 	// Check Etherscan API response status
 	if result.Status != "1" {
-		log.Println("❌ Etherscan API Error:", result.Message)
 		return nil, fmt.Errorf("Etherscan API error: %s", result.Message)
 	}
 
