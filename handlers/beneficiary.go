@@ -25,7 +25,6 @@ func GetBeneficiaries(c *gin.Context) {
 		normalTxs   []models.Transaction
 		internalTxs []models.Transaction
 		tokenTxs    []models.Transaction
-		errChan     = make(chan error, 3)
 		wg          sync.WaitGroup
 	)
 
@@ -37,7 +36,7 @@ func GetBeneficiaries(c *gin.Context) {
 		var err error
 		normalTxs, err = services.FetchEtherscanData("account", "txlist", address)
 		if err != nil {
-			errChan <- err
+			log.Printf("Error fetching normal transactions: %v", err)
 		}
 	}()
 
@@ -47,7 +46,7 @@ func GetBeneficiaries(c *gin.Context) {
 		var err error
 		internalTxs, err = services.FetchEtherscanData("account", "txlistinternal", address)
 		if err != nil {
-			errChan <- err
+			log.Printf("Error fetching internal transactions: %v", err)
 		}
 	}()
 
@@ -57,20 +56,12 @@ func GetBeneficiaries(c *gin.Context) {
 		var err error
 		tokenTxs, err = services.FetchEtherscanData("account", "tokentx", address)
 		if err != nil {
-			errChan <- err
+			log.Printf("Error fetching tokentx transactions: %v", err)
 		}
 	}()
 
 	// Wait for API calls to finish
 	wg.Wait()
-	close(errChan)
-
-	// Check for errors
-	for err := range errChan {
-		log.Printf("Error fetching transactions: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transactions"})
-		return
-	}
 
 	// Combine all transactions
 	allTxs := append(append(normalTxs, internalTxs...), tokenTxs...)
