@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/Prikshit/fundflow-analysis/helpers"
 	"github.com/Prikshit/fundflow-analysis/models"
@@ -20,23 +21,55 @@ func GetBeneficiaries(c *gin.Context) {
 		return
 	}
 
-	// Fetch transactions with error handling
-	normalTxs, err := services.FetchEtherscanData("account", "txlist", address)
-	if err != nil {
-		log.Printf("Error fetching normal transactions: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch normal transactions"})
-	}
+	var (
+		normalTxs   []models.Transaction
+		internalTxs []models.Transaction
+		tokenTxs    []models.Transaction
+		errChan     = make(chan error, 3)
+		wg          sync.WaitGroup
+	)
 
-	internalTxs, err := services.FetchEtherscanData("account", "txlistinternal", address)
-	if err != nil {
-		log.Printf("Error fetching internal transactions: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch internal transactions"})
-	}
+	wg.Add(3) // Run 3 API calls in parallel
 
-	tokenTxs, err := services.FetchEtherscanData("account", "tokentx", address)
-	if err != nil {
-		log.Printf("Error fetching token transactions: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch token transactions"})
+	// Fetch normal transactions
+	go func() {
+		defer wg.Done()
+		var err error
+		normalTxs, err = services.FetchEtherscanData("account", "txlist", address)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Fetch internal transactions
+	go func() {
+		defer wg.Done()
+		var err error
+		internalTxs, err = services.FetchEtherscanData("account", "txlistinternal", address)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Fetch token transfers
+	go func() {
+		defer wg.Done()
+		var err error
+		tokenTxs, err = services.FetchEtherscanData("account", "tokentx", address)
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	// Wait for API calls to finish
+	wg.Wait()
+	close(errChan)
+
+	// Check for errors
+	for err := range errChan {
+		log.Printf("Error fetching transactions: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch transactions"})
+		return
 	}
 
 	// Combine all transactions
