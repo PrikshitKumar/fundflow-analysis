@@ -28,7 +28,9 @@ This repository contains a **Go-based API** using the **Gin framework** to analy
    ```bash
    go run main.go
    ```  
-5. Test the endpoints:  
+5. Test the endpoints for Beneficiary and payer:  
    ```bash
-   curl "http://localhost:8080/beneficiary?address=0xYourEthereumAddress"
+   curl -X GET "http://localhost:8080/beneficiary?address=0x1ecD55bD5C5754d44b88937928Faf00C8BDc4Ae8" -H "Content-Type: application/json" | jq
+   curl -X GET "http://localhost:8080/beneficiary?address=0x2e5eF37Ade8afb712B8Be858fEc7389Fe32857e2" -H "Content-Type: application/json" | jq
+   curl -X GET "http://localhost:8080/payer?address=0x1218E12D77A8D1ad56Ec2f6d3d09A428cb7FDA7c" -H "Content-Type: application/json" | jq
    ```
