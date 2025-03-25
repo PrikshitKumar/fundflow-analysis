@@ -19,16 +19,17 @@ This repository contains a **Go-based API** using the **Gin framework** to analy
    ```bash
    go mod tidy
    ```  
-3. Create a `.env` file and add your **Etherscan API Key**:  
-   ```ini
+3. Generate the API Key from: `https://etherscan.io/apidashboard` 
+4. Create a `.env` file and add your **Etherscan API Key**:  
+   ```bash
    ETHERSCAN_API_KEY=your_api_key_here
    PORT=8080
    ```  
-4. Run the API:  
+5. Run the API:  
    ```bash
    go run main.go
    ```  
-5. Test the endpoints for Beneficiary and payer:  
+6. Test the endpoints for Beneficiary and payer:  
    ```bash
    curl -X GET "http://localhost:8080/beneficiary?address=0x1ecD55bD5C5754d44b88937928Faf00C8BDc4Ae8" -H "Content-Type: application/json" | jq
    curl -X GET "http://localhost:8080/beneficiary?address=0x2e5eF37Ade8afb712B8Be858fEc7389Fe32857e2" -H "Content-Type: application/json" | jq
